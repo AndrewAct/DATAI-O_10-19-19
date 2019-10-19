@@ -1,0 +1,233 @@
+#This is the project of Mid-Ohio Food Bank
+#The operator want to determine the relationship among various variables
+#The data format is from Kaggle 
+#Retrieved from: https://www.kaggle.com/ldfreeman3/a-data-science-framework-to-achieve-99-accuracy#Step-6:-Validate-and-Implement
+#Data offered by Mid-Ohio Food Bank
+#The data is collected in 2019
+
+#The guideline is:
+#1. Visualize the data of different age groups
+#2. Visualize the data of different household locations
+#3. Find the relationship between age group and food consumed
+#4. Find then relationship between date and food consumed
+#5. Suggest how to adjust food offer in different dates
+#6. Suggest how to assign food according to location
+#7. Suggest the pharmacy in different locations
+#8. Compare the data in 2019 and 2018 (if possible)
+
+import sys
+print("Python version: {}". format(sys.version))
+
+import pandas as pd 
+import csv
+print("pandas version: {}". format(pd.__version__))
+
+import matplotlib
+from matplotlib import pyplot as plt 
+print("matplotlib version: {}". format(matplotlib.__version__))
+import numpy as np 
+print("NumPy version: {}". format(np.__version__))
+
+import scipy as sp #collection of functions for scientific computing and advance mathematics
+print("SciPy version: {}". format(sp.__version__)) 
+
+import IPython
+from IPython import display #pretty printing of dataframes in Jupyter notebook
+print("IPython version: {}". format(IPython.__version__)) 
+
+import sklearn #collection of machine learning algorithms
+print("scikit-learn version: {}". format(sklearn.__version__))
+
+#misc libraries
+import random
+import time
+
+import warnings
+warnings.filterwarnings('ignore')
+print('-'*25)
+
+
+#Pre-set data 
+#This format is also retrieved from: https://www.kaggle.com/ldfreeman3/a-data-science-framework-to-achieve-99-accuracy#Step-6:-Validate-and-Implement
+#Common Model Algorithms
+from sklearn import svm, tree, linear_model, neighbors, naive_bayes, ensemble, discriminant_analysis, gaussian_process
+from xgboost import XGBClassifier
+
+#Common Model Helpers
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+from sklearn import feature_selection
+from sklearn import model_selection
+from sklearn import metrics
+
+#Visualization
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import matplotlib.pylab as pylab
+import seaborn as sns
+from pandas.tools.plotting import scatter_matrix
+
+#Configure Visualization Defaults
+#%matplotlib inline = show plots in Jupyter Notebook browser
+%matplotlib inline
+mpl.style.use('ggplot')
+sns.set_style('white')
+
+ #Work on dim_dates
+raw_dim_date = pd.read_csv('/Users/chenzhuo/Desktop/DATAI:O_10:19/dim_dates.csv')
+
+data1 = raw_dim_date.copy(deep = True)
+
+print(raw_dim_date.info())
+
+raw_dim_date.sample(10)
+
+#Compile and train data
+print('Train columns with null values:\n', data1.isnull().sum())
+print("-"*10)
+
+raw_dim_date.describe(include = 'all')
+
+#Compile data in pt_families
+from matplotlib import pyplot as plt 
+import pandas as pd
+family_info = pd.read_csv('/Users/chenzhuo/Desktop/DATAI:O_10:19/pt_families.csv')
+
+
+age = family_info.age
+has_dob = family_info.has_dob
+gender = family_info.gender_code
+race = family_info.race_id
+ethnic = family_info.ethnic_id
+household_size = family_info.household_size
+avg_household_size = family_info.avg_household_size
+avg_hosehold_sd = family_info.avg_household_size_sd
+household_count_adults = family_info.household_count_adults
+household_count_seniors = family_info.household_count_seniors
+household_count_kids = family_info.household_count_kids
+fy19_service_count = family_info.fy19_service_count
+fy20_service_count = family_info.fy20_service_count
+
+
+plt.plot(age,fy19_service_count,'r',lw=1.3)
+plt.plot(age,fy20_service_count,'g',lw=1.3)
+plt.xlabel('age of household')
+plt.ylabel('service count')
+plt.legend(['service count in 19', 'service count in 20'], loc = 4)
+plt.show()
+plt.plot
+
+#Do the same thing with house hold size and average house hold size
+plt.plot(household_size, fy19_service_count, 'r', lw = 1.3) 
+plt.plot(avg_household_size, fy19_service_count, 'g', lw = 1.3)
+plt.xlabel('House Hold Size')
+plt.ylabel('Service Count')
+plt.legend(['actual house hold size', 'average house hold size'], loc = 4)
+plt.show()
+
+#Find the relationship between age group (adults, seniors, kids) with service count 
+plt.plot(household_count_seniors, fy19_service_count, 'r', lw = 1.3) 
+plt.plot(household_count_adults, fy19_service_count, 'g', lw = 1.3)
+plt.plot(household_count_kids, fy19_service_count, 'b', lw = 1.3)
+plt.xlabel('Number of family member')
+plt.ylabel('Service count')
+plt.legend(['Number of seniors','Number of adults', 'Number of Kids'], loc = 4)
+plt.show()
+
+#Since different families have different number of adults, seniors and kids and total number as well
+#First, calculate the average service count (per people) 
+#Then, comare service count with average 
+#Determine if adults or seniors or kids consumes more
+#The ultimate goal is finding the correlation of family members in different age groups and service count
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt 
+
+colnames = ['household_count_adults', 'household_count_seniors', 'household_count_kids']
+data = pd.read_csv('/Users/chenzhuo/Desktop/DATAI:O_10:19/pt_families.csv', names=colnames)
+
+corr = data.corr()
+fig = plt.figure()
+ax = fig.add_subplot(111)
+cax = ax.matshow(corr,cmap='coolwarm', vmin=-1, vmax=1)
+fig.colorbar(cax)
+ticks = np.arange(0,len(data.columns),1)
+ax.set_xticks(ticks)
+plt.xticks(rotation=90)
+ax.set_yticks(ticks)
+ax.set_xticklabels(data.columns)
+ax.set_yticklabels(data.columns)
+plt.show()
+
+#Also, this team want to know the age boxplot of the households 
+plt.figure(figsize=[16,12])
+
+plt.subplot(231)
+plt.boxplot(x=family_info['age'], showmeans = True, meanline = True)
+plt.title('Age Boxplot')
+plt.ylabel('Age (years old)')
+
+plt.subplot(232)
+plt.boxplot(family_info['household_size'], showmeans = True, meanline = True)
+plt.title('House Hold Size Boxplot')
+plt.ylabel('House Hold Size (people)')
+
+plt.subplot(233)
+plt.boxplot(family_info['avg_household_size'], showmeans = True, meanline = True)
+plt.title('Family Size Boxplot')
+plt.ylabel('Family Size (#)')
+
+#Determine the relationship between sex
+plt.subplot(234)
+plt.hist(x = [family_info[family_info['gender_code']== 'F']['fy19_service_count'], family_info[family_info['gender_code']== 'M']['fy19_service_count']], 
+         stacked=True, color = ['g','r'],label = ['Female','Male'])
+plt.title('Servicd Count Histogram by Gender')
+plt.xlabel('Gender')
+plt.ylabel('Service Counts')
+plt.legend()
+
+plt.subplot(235)
+plt.hist(x = [family_info[family_info['gender_code']== 'F']['avg_household_size'], family_info[family_info['gender_code']== 'M']['avg_household_size']], 
+         stacked=True, color = ['g','r'],label = ['Female','Male'])
+plt.title('Avergae Household Size Histogram by Gender')
+plt.xlabel('Gender')
+plt.ylabel('Average Household Size')
+plt.legend()
+
+#Now, find if there is any relationship between location and the service
+#Plot the density of distribution 
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt 
+
+data = pd.read_csv('/Users/chenzhuo/Desktop/DATAI:O_10:19/pt_families.csv')
+list = []
+for x in data['county']:
+    if x not in list:
+        list.append(x)
+print(*list, sep = '\n')
+
+#And get the inforamtion of Zip Code
+list2 = []
+for y in data['zip_code']:
+    if y not in list2:
+        list2.append(y)
+print(*list2, sep = '\n')
+
+for i in list2:
+    if i.type() != int 
+    list2.remove(i)
+    
+frequency = []
+for code in data['zip_code']:
+    frequency.append(data['zip_code'].count(code))
+    list2.append(code)
+
+print(frequency)
+plt.plot(code, frequency)
+#According to the graphs 
+#Female households contributes more to the service count 
+#Also, female households take care of more family members
+#Plot the locations above with H3
+#But the operator had run out of time 
+#So that's the end for 10/19/2019
+#Thank you
